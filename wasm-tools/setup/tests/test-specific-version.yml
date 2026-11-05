@@ -1,0 +1,32 @@
+name: Test specific wasm-tools version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          version: "1.219.1"
+      - name: Assert requested version installed
+        run: |
+          if ! command -v wasm-tools >/dev/null 2>&1; then
+            echo "FAIL: wasm-tools not on PATH"
+            exit 1
+          fi
+          OUT="$(wasm-tools --version)"
+          echo "version: $OUT"
+          if ! echo "$OUT" | grep -q '1\.219\.1'; then
+            echo "FAIL: expected version 1.219.1"
+            exit 1
+          fi
+          echo "PASS"
+      - name: Assert wasm-tools works on a small module
+        run: |
+          printf '(module (func (export "f") (result i32) i32.const 42))' > /tmp/m.wat
+          wasm-tools parse /tmp/m.wat -o /tmp/m.wasm
+          wasm-tools validate /tmp/m.wasm
+          [ -s /tmp/m.wasm ] || { echo "FAIL: no wasm produced"; exit 1; }
+          echo "PASS"

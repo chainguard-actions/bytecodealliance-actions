@@ -1,0 +1,25 @@
+name: Test setup wasmtime specific version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          version: v25.0.0
+      - name: Assert requested wasmtime version is installed
+        run: |
+          if ! command -v wasmtime >/dev/null 2>&1; then
+            echo "FAIL: wasmtime not found on PATH"
+            exit 1
+          fi
+          OUT="$(wasmtime --version)"
+          echo "version output: $OUT"
+          if ! echo "$OUT" | grep -q '25\.0\.0'; then
+            echo "FAIL: expected version 25.0.0"
+            exit 1
+          fi
+          echo "PASS"
